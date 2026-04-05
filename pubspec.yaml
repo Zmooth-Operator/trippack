@@ -1,0 +1,48 @@
+name: trippack
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  drift: ^2.32.1
+  drift_flutter: ^0.3.0
+  path: ^1.9.1
+  http: ^1.6.0
+  file_picker: ^8.0.0
+  flutter_map: ^8.2.2
+  geolocator: ^14.0.2
+  sqflite: ^2.4.2
+  local_auth: ^3.0.1
+  shared_preferences: ^2.5.5
+  open_filex: ^4.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.13.1
+  drift_dev: ^2.32.1
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.5
+
+flutter_launcher_icons:
+  android: false
+  ios: true
+  image_path: "assets/icon/icon.png"
+  remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#0D0D0D"
+  image: assets/icon/icon.png
+  ios: true
+  android: false
+
+flutter:
+  uses-material-design: true
