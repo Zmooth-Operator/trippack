@@ -21,6 +21,15 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
       'PRIMARY KEY AUTOINCREMENT',
     ),
   );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cityMeta = const VerificationMeta('city');
   @override
   late final GeneratedColumn<String> city = GeneratedColumn<String>(
@@ -118,6 +127,7 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    name,
     city,
     country,
     departureDate,
@@ -142,6 +152,12 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     }
     if (data.containsKey('city')) {
       context.handle(
@@ -215,6 +231,10 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         DriftSqlType.int,
         data['${effectivePrefix}id'],
       )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      ),
       city: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}city'],
@@ -262,6 +282,7 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
 
 class Trip extends DataClass implements Insertable<Trip> {
   final int id;
+  final String? name;
   final String city;
   final String? country;
   final DateTime? departureDate;
@@ -273,6 +294,7 @@ class Trip extends DataClass implements Insertable<Trip> {
   final DateTime createdAt;
   const Trip({
     required this.id,
+    this.name,
     required this.city,
     this.country,
     this.departureDate,
@@ -287,6 +309,9 @@ class Trip extends DataClass implements Insertable<Trip> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
+    }
     map['city'] = Variable<String>(city);
     if (!nullToAbsent || country != null) {
       map['country'] = Variable<String>(country);
@@ -314,6 +339,7 @@ class Trip extends DataClass implements Insertable<Trip> {
   TripsCompanion toCompanion(bool nullToAbsent) {
     return TripsCompanion(
       id: Value(id),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
       city: Value(city),
       country: country == null && nullToAbsent
           ? const Value.absent()
@@ -341,6 +367,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Trip(
       id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String?>(json['name']),
       city: serializer.fromJson<String>(json['city']),
       country: serializer.fromJson<String?>(json['country']),
       departureDate: serializer.fromJson<DateTime?>(json['departureDate']),
@@ -357,6 +384,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String?>(name),
       'city': serializer.toJson<String>(city),
       'country': serializer.toJson<String?>(country),
       'departureDate': serializer.toJson<DateTime?>(departureDate),
@@ -371,6 +399,7 @@ class Trip extends DataClass implements Insertable<Trip> {
 
   Trip copyWith({
     int? id,
+    Value<String?> name = const Value.absent(),
     String? city,
     Value<String?> country = const Value.absent(),
     Value<DateTime?> departureDate = const Value.absent(),
@@ -382,6 +411,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     DateTime? createdAt,
   }) => Trip(
     id: id ?? this.id,
+    name: name.present ? name.value : this.name,
     city: city ?? this.city,
     country: country.present ? country.value : this.country,
     departureDate: departureDate.present
@@ -397,6 +427,7 @@ class Trip extends DataClass implements Insertable<Trip> {
   Trip copyWithCompanion(TripsCompanion data) {
     return Trip(
       id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
       city: data.city.present ? data.city.value : this.city,
       country: data.country.present ? data.country.value : this.country,
       departureDate: data.departureDate.present
@@ -417,6 +448,7 @@ class Trip extends DataClass implements Insertable<Trip> {
   String toString() {
     return (StringBuffer('Trip(')
           ..write('id: $id, ')
+          ..write('name: $name, ')
           ..write('city: $city, ')
           ..write('country: $country, ')
           ..write('departureDate: $departureDate, ')
@@ -433,6 +465,7 @@ class Trip extends DataClass implements Insertable<Trip> {
   @override
   int get hashCode => Object.hash(
     id,
+    name,
     city,
     country,
     departureDate,
@@ -448,6 +481,7 @@ class Trip extends DataClass implements Insertable<Trip> {
       identical(this, other) ||
       (other is Trip &&
           other.id == this.id &&
+          other.name == this.name &&
           other.city == this.city &&
           other.country == this.country &&
           other.departureDate == this.departureDate &&
@@ -461,6 +495,7 @@ class Trip extends DataClass implements Insertable<Trip> {
 
 class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<int> id;
+  final Value<String?> name;
   final Value<String> city;
   final Value<String?> country;
   final Value<DateTime?> departureDate;
@@ -472,6 +507,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<DateTime> createdAt;
   const TripsCompanion({
     this.id = const Value.absent(),
+    this.name = const Value.absent(),
     this.city = const Value.absent(),
     this.country = const Value.absent(),
     this.departureDate = const Value.absent(),
@@ -484,6 +520,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   });
   TripsCompanion.insert({
     this.id = const Value.absent(),
+    this.name = const Value.absent(),
     required String city,
     this.country = const Value.absent(),
     this.departureDate = const Value.absent(),
@@ -496,6 +533,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   }) : city = Value(city);
   static Insertable<Trip> custom({
     Expression<int>? id,
+    Expression<String>? name,
     Expression<String>? city,
     Expression<String>? country,
     Expression<DateTime>? departureDate,
@@ -508,6 +546,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (name != null) 'name': name,
       if (city != null) 'city': city,
       if (country != null) 'country': country,
       if (departureDate != null) 'departure_date': departureDate,
@@ -522,6 +561,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
 
   TripsCompanion copyWith({
     Value<int>? id,
+    Value<String?>? name,
     Value<String>? city,
     Value<String?>? country,
     Value<DateTime?>? departureDate,
@@ -534,6 +574,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   }) {
     return TripsCompanion(
       id: id ?? this.id,
+      name: name ?? this.name,
       city: city ?? this.city,
       country: country ?? this.country,
       departureDate: departureDate ?? this.departureDate,
@@ -551,6 +592,9 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
     }
     if (city.present) {
       map['city'] = Variable<String>(city.value);
@@ -586,6 +630,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   String toString() {
     return (StringBuffer('TripsCompanion(')
           ..write('id: $id, ')
+          ..write('name: $name, ')
           ..write('city: $city, ')
           ..write('country: $country, ')
           ..write('departureDate: $departureDate, ')
@@ -1019,6 +1064,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 typedef $$TripsTableCreateCompanionBuilder =
     TripsCompanion Function({
       Value<int> id,
+      Value<String?> name,
       required String city,
       Value<String?> country,
       Value<DateTime?> departureDate,
@@ -1032,6 +1078,7 @@ typedef $$TripsTableCreateCompanionBuilder =
 typedef $$TripsTableUpdateCompanionBuilder =
     TripsCompanion Function({
       Value<int> id,
+      Value<String?> name,
       Value<String> city,
       Value<String?> country,
       Value<DateTime?> departureDate,
@@ -1076,6 +1123,11 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
   });
   ColumnFilters<int> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1164,6 +1216,11 @@ class $$TripsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get city => $composableBuilder(
     column: $table.city,
     builder: (column) => ColumnOrderings(column),
@@ -1221,6 +1278,9 @@ class $$TripsTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
   GeneratedColumn<String> get city =>
       $composableBuilder(column: $table.city, builder: (column) => column);
@@ -1308,6 +1368,7 @@ class $$TripsTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String?> name = const Value.absent(),
                 Value<String> city = const Value.absent(),
                 Value<String?> country = const Value.absent(),
                 Value<DateTime?> departureDate = const Value.absent(),
@@ -1319,6 +1380,7 @@ class $$TripsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
               }) => TripsCompanion(
                 id: id,
+                name: name,
                 city: city,
                 country: country,
                 departureDate: departureDate,
@@ -1332,6 +1394,7 @@ class $$TripsTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String?> name = const Value.absent(),
                 required String city,
                 Value<String?> country = const Value.absent(),
                 Value<DateTime?> departureDate = const Value.absent(),
@@ -1343,6 +1406,7 @@ class $$TripsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
               }) => TripsCompanion.insert(
                 id: id,
+                name: name,
                 city: city,
                 country: country,
                 departureDate: departureDate,

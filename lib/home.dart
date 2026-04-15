@@ -11,23 +11,35 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: themeNotifier,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    final isDark = themeNotifier.isDark;
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: bg,
         elevation: 0,
-        title: const Text('TripPack',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24)),
+        title: Text('TripPack',
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 24)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 24),
+            icon: Icon(Icons.settings_outlined, color: textColor, size: 24),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.add, color: Colors.white, size: 28),
+            icon: Icon(Icons.add, color: textColor, size: 28),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const NewTripScreen()),
@@ -50,34 +62,34 @@ class HomeScreen extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF16213E),
+                    color: cardColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: textColor.withOpacity(0.08)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.download, color: Colors.white54, size: 16),
+                          Icon(Icons.download, color: textColor.withOpacity(0.5), size: 16),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Downloading map for ${dm.currentCity}...',
-                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              style: TextStyle(color: textColor.withOpacity(0.7), fontSize: 13),
                             ),
                           ),
                           Text(
                             '${(dm.progress * 100).toInt()}%',
-                            style: const TextStyle(color: Colors.white38, fontSize: 12),
+                            style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 12),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       LinearProgressIndicator(
                         value: dm.progress,
-                        backgroundColor: Colors.white12,
-                        valueColor: const AlwaysStoppedAnimation(Colors.white38),
+                        backgroundColor: textColor.withOpacity(0.1),
+                        valueColor: AlwaysStoppedAnimation(textColor.withOpacity(0.4)),
                       ),
                     ],
                   ),
@@ -85,14 +97,17 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             Text('Your Trips',
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, letterSpacing: 1.2)),
+                style: TextStyle(
+                    color: textColor.withOpacity(0.5),
+                    fontSize: 14,
+                    letterSpacing: 1.2)),
             const SizedBox(height: 24),
             Expanded(
               child: StreamBuilder<List<Trip>>(
                 stream: database.watchAllTrips(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Colors.white));
+                    return Center(child: CircularProgressIndicator(color: textColor.withOpacity(0.3)));
                   }
                   final trips = snapshot.data ?? [];
                   if (trips.isEmpty) {
@@ -100,11 +115,13 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.flight_takeoff, size: 64, color: Colors.white.withOpacity(0.2)),
+                          Icon(Icons.flight_takeoff, size: 64, color: textColor.withOpacity(0.2)),
                           const SizedBox(height: 16),
-                          Text('No trips yet', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 18)),
+                          Text('No trips yet',
+                              style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 18)),
                           const SizedBox(height: 8),
-                          Text('Tap + to create your first trip', style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 14)),
+                          Text('Tap + to create your first trip',
+                              style: TextStyle(color: textColor.withOpacity(0.2), fontSize: 14)),
                         ],
                       ),
                     );
@@ -172,6 +189,17 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: themeNotifier,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    final isDark = themeNotifier.isDark;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Dismissible(
       key: Key('${trip.id}'),
       direction: DismissDirection.endToStart,
@@ -190,7 +218,7 @@ class _TripCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF16213E),
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -199,12 +227,16 @@ class _TripCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(trip.city, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(trip.name ?? trip.city,
+                        style: TextStyle(
+                            color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
                     if (trip.country != null)
-                      Text(trip.country!, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13)),
+                      Text(trip.country!,
+                          style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 13)),
                     const SizedBox(height: 4),
-                    Text(dates, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14)),
+                    Text(dates,
+                        style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 14)),
                   ],
                 ),
               ),
@@ -215,7 +247,9 @@ class _TripCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: statusColor.withOpacity(0.4)),
                 ),
-                child: Text(trip.status, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600)),
+                child: Text(trip.status,
+                    style: TextStyle(
+                        color: statusColor, fontSize: 12, fontWeight: FontWeight.w600)),
               ),
             ],
           ),

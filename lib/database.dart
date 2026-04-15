@@ -5,6 +5,7 @@ part 'database.g.dart';
 
 class Trips extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().nullable()();  // NEU
   TextColumn get city => text()();
   TextColumn get country => text().nullable()();
   DateTimeColumn get departureDate => dateTime().nullable()();
@@ -30,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -41,6 +42,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 3) {
         await m.addColumn(documents, documents.filePath);
+      }
+      if (from < 4) {
+        await m.addColumn(trips, trips.name);
       }
     },
   );
@@ -106,5 +110,5 @@ class AppDatabase extends _$AppDatabase {
       update(documents).replace(doc);
 
   Future<void> deleteDocument(int id) =>
-      (delete(documents)..where((d) => d.id.equals(id))).go();
+(delete(documents)..where((d) => d.id.equals(id))).go();
 }

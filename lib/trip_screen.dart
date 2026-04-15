@@ -85,29 +85,41 @@ class _TripScreenState extends State<TripScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: themeNotifier,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    final isDark = themeNotifier.isDark;
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_trip.city,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(_trip.name ?? _trip.city,
+                style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18)),
             if (_trip.country != null)
               Text(_trip.country!,
-                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                  style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 12)),
           ],
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            color: const Color(0xFF16213E),
+            icon: Icon(Icons.more_vert, color: textColor),
+            color: cardColor,
             onSelected: (value) async {
               if (value == 'edit') {
                 await _openEditScreen();
@@ -117,13 +129,13 @@ class _TripScreenState extends State<TripScreen> {
               }
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
                 child: Row(
                   children: [
-                    Icon(Icons.edit_outlined, color: Colors.white70, size: 20),
-                    SizedBox(width: 8),
-                    Text('Edit trip', style: TextStyle(color: Colors.white70)),
+                    Icon(Icons.edit_outlined, color: textColor.withOpacity(0.7), size: 20),
+                    const SizedBox(width: 8),
+                    Text('Edit trip', style: TextStyle(color: textColor.withOpacity(0.7))),
                   ],
                 ),
               ),
@@ -141,11 +153,11 @@ class _TripScreenState extends State<TripScreen> {
           ),
         ],
       ),
-      body: _buildTab(),
+      body: _buildTab(bg, cardColor, textColor),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF16213E),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white38,
+        backgroundColor: cardColor,
+        selectedItemColor: isDark ? Colors.white : Colors.black,
+        unselectedItemColor: isDark ? Colors.white38 : Colors.black38,
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
         items: const [
@@ -157,16 +169,16 @@ class _TripScreenState extends State<TripScreen> {
     );
   }
 
-  Widget _buildTab() {
+  Widget _buildTab(Color bg, Color cardColor, Color textColor) {
     switch (_currentIndex) {
-      case 0: return _overviewTab();
+      case 0: return _overviewTab(cardColor, textColor);
       case 1: return _mapTab();
-      case 2: return _documentsTab();
-      default: return _overviewTab();
+      case 2: return _documentsTab(cardColor, textColor);
+      default: return _overviewTab(cardColor, textColor);
     }
   }
 
-  Widget _overviewTab() {
+  Widget _overviewTab(Color cardColor, Color textColor) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -175,19 +187,19 @@ class _TripScreenState extends State<TripScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF16213E),
+              color: cardColor,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               children: [
-                _infoRow(Icons.flight_takeoff, 'Departure', _formatDate(_trip.departureDate)),
+                _infoRow(Icons.flight_takeoff, 'Departure', _formatDate(_trip.departureDate), textColor),
                 const SizedBox(height: 16),
-                _infoRow(Icons.flight_land, 'Return', _formatDate(_trip.returnDate)),
+                _infoRow(Icons.flight_land, 'Return', _formatDate(_trip.returnDate), textColor),
                 const SizedBox(height: 16),
-                _infoRow(Icons.circle_outlined, 'Status', _trip.status),
+                _infoRow(Icons.circle_outlined, 'Status', _trip.status, textColor),
                 if (_trip.mapRadius != null) ...[
                   const SizedBox(height: 16),
-                  _infoRow(Icons.map_outlined, 'Map Radius', '${_trip.mapRadius} km'),
+                  _infoRow(Icons.map_outlined, 'Map Radius', '${_trip.mapRadius} km', textColor),
                 ],
               ],
             ),
@@ -199,7 +211,7 @@ class _TripScreenState extends State<TripScreen> {
 
   Widget _mapTab() {
     return TripMapWidget(
-key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
+      key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
       city: _trip.city,
       lat: _trip.lat,
       lng: _trip.lng,
@@ -207,7 +219,7 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
     );
   }
 
-  Widget _documentsTab() {
+  Widget _documentsTab(Color cardColor, Color textColor) {
     final docTypes = [
       'Boarding Pass', 'Hotel Booking', 'Passport Copy',
       'Train Ticket', 'Insurance', 'Tickets & Entries',
@@ -226,21 +238,24 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
               Row(
                 children: [
                   Text('Documents',
-                      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, letterSpacing: 1.2)),
+                      style: TextStyle(
+                          color: textColor.withOpacity(0.5),
+                          fontSize: 14,
+                          letterSpacing: 1.2)),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => _showUploadSheet(docTypes),
+                    onTap: () => _showUploadSheet(docTypes, cardColor, textColor),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: textColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.add, color: Colors.white, size: 16),
-                          SizedBox(width: 4),
-                          Text('Add', style: TextStyle(color: Colors.white, fontSize: 13)),
+                          Icon(Icons.add, color: textColor, size: 16),
+                          const SizedBox(width: 4),
+                          Text('Add', style: TextStyle(color: textColor, fontSize: 13)),
                         ],
                       ),
                     ),
@@ -254,13 +269,13 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.folder_outlined, size: 64, color: Colors.white.withOpacity(0.1)),
+                        Icon(Icons.folder_outlined, size: 64, color: textColor.withOpacity(0.1)),
                         const SizedBox(height: 16),
                         Text('No documents yet',
-                            style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 15)),
+                            style: TextStyle(color: textColor.withOpacity(0.3), fontSize: 15)),
                         const SizedBox(height: 8),
                         Text('Tap + Add to upload',
-                            style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 13)),
+                            style: TextStyle(color: textColor.withOpacity(0.2), fontSize: 13)),
                       ],
                     ),
                   ),
@@ -287,18 +302,18 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
                         onDismissed: (_) => _deleteDocument(doc.id),
                         child: GestureDetector(
                           onTap: doc.filePath != null ? () => _openDocument(doc) : null,
-                          onLongPress: () => _showDocumentOptions(doc),
+                          onLongPress: () => _showDocumentOptions(doc, cardColor, textColor),
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF16213E),
+                              color: cardColor,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
                                 Icon(
                                   doc.isUploaded ? Icons.check_circle : Icons.upload_file,
-                                  color: doc.isUploaded ? Colors.greenAccent : Colors.white38,
+                                  color: doc.isUploaded ? Colors.greenAccent : textColor.withOpacity(0.35),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -306,18 +321,20 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(doc.type,
-                                          style: const TextStyle(color: Colors.white, fontSize: 15)),
+                                          style: TextStyle(color: textColor, fontSize: 15)),
                                       if (doc.fileName != null)
                                         Text(doc.fileName!,
-                                            style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+                                            style: TextStyle(
+                                                color: textColor.withOpacity(0.4), fontSize: 12),
                                             overflow: TextOverflow.ellipsis),
                                     ],
                                   ),
                                 ),
                                 if (doc.filePath != null)
-                                  const Icon(Icons.chevron_right, color: Colors.white24, size: 18)
+                                  Icon(Icons.chevron_right, color: textColor.withOpacity(0.2), size: 18)
                                 else
-                                  Text('Pending', style: TextStyle(color: Colors.orange, fontSize: 12)),
+                                  const Text('Pending',
+                                      style: TextStyle(color: Colors.orange, fontSize: 12)),
                               ],
                             ),
                           ),
@@ -333,10 +350,10 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
     );
   }
 
-  void _showDocumentOptions(Document doc) {
+  void _showDocumentOptions(Document doc, Color cardColor, Color textColor) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF16213E),
+      backgroundColor: cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -346,20 +363,21 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(doc.type,
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             if (doc.filePath != null)
               ListTile(
-                leading: const Icon(Icons.open_in_new, color: Colors.white),
-                title: const Text('Open', style: TextStyle(color: Colors.white)),
+                leading: Icon(Icons.open_in_new, color: textColor),
+                title: Text('Open', style: TextStyle(color: textColor)),
                 onTap: () {
                   Navigator.pop(context);
                   _openDocument(doc);
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.upload_file, color: Colors.white),
-              title: const Text('Replace file', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.upload_file, color: textColor),
+              title: Text('Replace file', style: TextStyle(color: textColor)),
               onTap: () {
                 Navigator.pop(context);
                 _replaceDocument(doc);
@@ -379,10 +397,11 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
     );
   }
 
-  void _showUploadSheet(List<String> docTypes) {
+  void _showUploadSheet(List<String> docTypes, Color cardColor, Color textColor) {
+    final bgColor = themeNotifier.isDark ? AppColors.darkBg : AppColors.lightBg;
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF16213E),
+      backgroundColor: cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -392,8 +411,9 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Select document type',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Select document type',
+                style: TextStyle(
+                    color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
@@ -406,11 +426,11 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A2E),
+                    color: bgColor,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white12),
+                    border: Border.all(color: textColor.withOpacity(0.1)),
                   ),
-                  child: Text(type, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                  child: Text(type, style: TextStyle(color: textColor, fontSize: 14)),
                 ),
               )).toList(),
             ),
@@ -421,14 +441,16 @@ key: ValueKey('${_trip.lat}-${_trip.lng}-${_trip.mapRadius}'),
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value, Color textColor) {
     return Row(
       children: [
-        Icon(icon, color: Colors.white38, size: 18),
+        Icon(icon, color: textColor.withOpacity(0.35), size: 18),
         const SizedBox(width: 12),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14)),
+        Text(label, style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 14)),
         const Spacer(),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(value,
+            style: TextStyle(
+                color: textColor, fontSize: 14, fontWeight: FontWeight.w600)),
       ],
     );
   }

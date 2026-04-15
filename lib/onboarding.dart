@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'main_nav.dart';
+import 'main.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -30,13 +32,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     },
   ];
 
-  void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
-      _controller.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    } else {
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_complete', true);
+    if (mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainNav()),
@@ -44,21 +43,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  void _nextPage() {
+    if (_currentPage < _pages.length - 1) {
+      _controller.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _completeOnboarding();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: themeNotifier,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    final isDark = themeNotifier.isDark;
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: bg,
       body: SafeArea(
         child: Column(
           children: [
             Align(
               alignment: Alignment.topRight,
               child: TextButton(
-                onPressed: () => Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MainNav()),
-                ),
-                child: const Text('Skip', style: TextStyle(color: Colors.white54)),
+                onPressed: _completeOnboarding,
+                child: Text('Skip',
+                    style: TextStyle(color: textColor.withOpacity(0.5))),
               ),
             ),
             Expanded(
@@ -73,18 +92,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(page['icon'] as IconData, size: 80, color: Colors.white),
+                        Icon(page['icon'] as IconData, size: 80, color: textColor),
                         const SizedBox(height: 40),
                         Text(
                           page['title'] as String,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: textColor,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           page['subtitle'] as String,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16, height: 1.5),
+                          style: TextStyle(
+                              color: textColor.withOpacity(0.6),
+                              fontSize: 16,
+                              height: 1.5),
                         ),
                       ],
                     ),
@@ -102,7 +127,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: _currentPage == i ? 24 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: _currentPage == i ? Colors.white : Colors.white24,
+                    color: _currentPage == i
+                        ? textColor
+                        : textColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -117,13 +144,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: ElevatedButton(
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF1A1A2E),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    backgroundColor: isDark ? Colors.white : Colors.black,
+                    foregroundColor: isDark ? Colors.black : Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
                     _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

@@ -18,6 +18,7 @@ class EditTripScreen extends StatefulWidget {
 
 class _EditTripScreenState extends State<EditTripScreen> {
   final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   DateTimeRange? _dateRange;
   int? _mapRadius;
   String? _selectedCity;
@@ -47,6 +48,7 @@ class _EditTripScreenState extends State<EditTripScreen> {
     _cityController.text = widget.trip.country != null
         ? '${widget.trip.city}, ${widget.trip.country}'
         : widget.trip.city;
+    _nameController.text = widget.trip.name ?? widget.trip.city;
     if (widget.trip.departureDate != null && widget.trip.returnDate != null) {
       _dateRange = DateTimeRange(
         start: widget.trip.departureDate!,
@@ -67,11 +69,13 @@ class _EditTripScreenState extends State<EditTripScreen> {
   void dispose() {
     _debounce?.cancel();
     _cityController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
   bool get _hasChanges {
-    return _selectedCity != widget.trip.city ||
+    return _nameController.text != (widget.trip.name ?? widget.trip.city) ||
+        _selectedCity != widget.trip.city ||
         _selectedCountry != widget.trip.country ||
         _dateRange?.start != widget.trip.departureDate ||
         _dateRange?.end != widget.trip.returnDate ||
@@ -120,6 +124,7 @@ class _EditTripScreenState extends State<EditTripScreen> {
   }
 
   Future<void> _pickDateRange() async {
+    final isDark = themeNotifier.isDark;
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
@@ -127,16 +132,25 @@ class _EditTripScreenState extends State<EditTripScreen> {
       initialDateRange: _dateRange,
       initialEntryMode: DatePickerEntryMode.calendarOnly,
       builder: (context, child) => Theme(
-        data: ThemeData.dark().copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFFFCC00),
-            onPrimary: Color(0xFF1A1A2E),
-            surface: Color(0xFF16213E),
-            onSurface: Colors.white,
-            secondaryContainer: Color(0xFF2A2A4E),
-            onSecondaryContainer: Colors.white,
-          ),
-        ),
+        data: isDark
+            ? ThemeData.dark().copyWith(
+                colorScheme: const ColorScheme.dark(
+                  primary: AppColors.accent,
+                  onPrimary: AppColors.darkBg,
+                  surface: AppColors.darkCard,
+                  onSurface: Colors.white,
+                  secondaryContainer: Color(0xFF2A2A4E),
+                  onSecondaryContainer: Colors.white,
+                ),
+              )
+            : ThemeData.light().copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: AppColors.accent,
+                  onPrimary: Colors.black,
+                  surface: AppColors.lightCard,
+                  onSurface: Colors.black,
+                ),
+              ),
         child: child!,
       ),
     );
@@ -156,6 +170,9 @@ class _EditTripScreenState extends State<EditTripScreen> {
     if (_selectedCity == null || _selectedCity!.trim().isEmpty) return;
 
     final updated = widget.trip.copyWith(
+      name: Value(_nameController.text.trim().isNotEmpty
+          ? _nameController.text.trim()
+          : widget.trip.name),
       city: _selectedCity!,
       country: Value(_selectedCountry),
       departureDate: Value(_dateRange?.start),
@@ -171,19 +188,31 @@ class _EditTripScreenState extends State<EditTripScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: themeNotifier,
+      builder: (context, _) => _build(context),
+    );
+  }
+
+  Widget _build(BuildContext context) {
+    final isDark = themeNotifier.isDark;
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Edit Trip',
           style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+              color: textColor, fontWeight: FontWeight.bold, fontSize: 20),
         ),
       ),
       body: SingleChildScrollView(
@@ -191,29 +220,48 @@ class _EditTripScreenState extends State<EditTripScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _sectionLabel('Destination'),
+            _sectionLabel('Trip Name', textColor),
             const SizedBox(height: 8),
             TextField(
-              controller: _cityController,
-              style: const TextStyle(color: Colors.white),
-              onChanged: _onSearchChanged,
+              controller: _nameController,
+              style: TextStyle(color: textColor),
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'City or country',
-                hintStyle: const TextStyle(color: Colors.white38),
+                hintText: 'Trip name',
+                hintStyle: TextStyle(color: textColor.withOpacity(0.35)),
                 filled: true,
-                fillColor: const Color(0xFF16213E),
+                fillColor: cardColor,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none),
-                prefixIcon: const Icon(Icons.search, color: Colors.white38),
+                prefixIcon:
+                    Icon(Icons.label_outline, color: textColor.withOpacity(0.35)),
+              ),
+            ),
+            const SizedBox(height: 28),
+            _sectionLabel('Destination', textColor),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _cityController,
+              style: TextStyle(color: textColor),
+              onChanged: _onSearchChanged,
+              decoration: InputDecoration(
+                hintText: 'City or country',
+                hintStyle: TextStyle(color: textColor.withOpacity(0.35)),
+                filled: true,
+                fillColor: cardColor,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+                prefixIcon: Icon(Icons.search, color: textColor.withOpacity(0.35)),
                 suffixIcon: _isSearching
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
+                    ? Padding(
+                        padding: const EdgeInsets.all(12),
                         child: SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              color: Colors.white38, strokeWidth: 2),
+                              color: textColor.withOpacity(0.35), strokeWidth: 2),
                         ),
                       )
                     : null,
@@ -223,7 +271,7 @@ class _EditTripScreenState extends State<EditTripScreen> {
               const SizedBox(height: 4),
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF16213E),
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: ListView.separated(
@@ -231,16 +279,17 @@ class _EditTripScreenState extends State<EditTripScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _suggestions.length,
                   separatorBuilder: (_, __) =>
-                      Divider(color: Colors.white.withOpacity(0.05), height: 1),
+                      Divider(color: textColor.withOpacity(0.05), height: 1),
                   itemBuilder: (context, i) {
                     final s = _suggestions[i];
                     return ListTile(
-                      leading: const Icon(Icons.location_on_outlined,
-                          color: Colors.white38, size: 20),
+                      leading: Icon(Icons.location_on_outlined,
+                          color: textColor.withOpacity(0.35), size: 20),
                       title: Text(s['city']!,
-                          style: const TextStyle(color: Colors.white, fontSize: 15)),
+                          style: TextStyle(color: textColor, fontSize: 15)),
                       subtitle: Text(s['country']!,
-                          style: const TextStyle(color: Colors.white38, fontSize: 13)),
+                          style: TextStyle(
+                              color: textColor.withOpacity(0.4), fontSize: 13)),
                       onTap: () {
                         setState(() {
                           _selectedCity = s['city'];
@@ -259,25 +308,27 @@ class _EditTripScreenState extends State<EditTripScreen> {
 
             const SizedBox(height: 28),
 
-            _sectionLabel('Travel Dates'),
+            _sectionLabel('Travel Dates', textColor),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickDateRange,
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF16213E),
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.date_range, color: Colors.white54, size: 20),
+                    Icon(Icons.date_range, color: textColor.withOpacity(0.5), size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _formatRange(),
                         style: TextStyle(
-                          color: _dateRange != null ? Colors.white : Colors.white38,
+                          color: _dateRange != null
+                              ? textColor
+                              : textColor.withOpacity(0.35),
                           fontSize: 15,
                           fontWeight: _dateRange != null
                               ? FontWeight.w600
@@ -285,7 +336,7 @@ class _EditTripScreenState extends State<EditTripScreen> {
                         ),
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Colors.white38),
+                    Icon(Icons.chevron_right, color: textColor.withOpacity(0.35)),
                   ],
                 ),
               ),
@@ -293,10 +344,9 @@ class _EditTripScreenState extends State<EditTripScreen> {
 
             const SizedBox(height: 28),
 
-            // Map Radius Header
             Row(
               children: [
-                _sectionLabel('Map Download Radius'),
+                _sectionLabel('Map Download Radius', textColor),
                 const Spacer(),
                 if (_offlineReady)
                   const Row(
@@ -304,14 +354,16 @@ class _EditTripScreenState extends State<EditTripScreen> {
                       Icon(Icons.check_circle, color: Colors.greenAccent, size: 14),
                       SizedBox(width: 4),
                       Text('Downloaded',
-                          style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+                          style:
+                              TextStyle(color: Colors.greenAccent, fontSize: 12)),
                     ],
                   ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
-              children: _radiusOptions.entries.toList().asMap().entries.map((e) {
+              children:
+                  _radiusOptions.entries.toList().asMap().entries.map((e) {
                 final index = e.key;
                 final option = e.value;
                 final isLast = index == _radiusOptions.length - 1;
@@ -324,15 +376,17 @@ class _EditTripScreenState extends State<EditTripScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? const Color(0xFF6C63FF)
-                            : const Color(0xFF16213E),
+                            ? AppColors.accentBlue
+                            : cardColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         option.value,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.white38,
+                          color: isSelected
+                              ? Colors.white
+                              : textColor.withOpacity(0.4),
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -351,10 +405,10 @@ class _EditTripScreenState extends State<EditTripScreen> {
               child: ElevatedButton(
                 onPressed: _hasChanges ? _saveChanges : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF1A1A2E),
-                  disabledBackgroundColor: Colors.white12,
-                  disabledForegroundColor: Colors.white24,
+                  backgroundColor: isDark ? Colors.white : Colors.black,
+                  foregroundColor: isDark ? Colors.black : Colors.white,
+                  disabledBackgroundColor: textColor.withOpacity(0.08),
+                  disabledForegroundColor: textColor.withOpacity(0.25),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
                 ),
@@ -370,11 +424,11 @@ class _EditTripScreenState extends State<EditTripScreen> {
     );
   }
 
-  Widget _sectionLabel(String text) {
+  Widget _sectionLabel(String text, Color textColor) {
     return Text(
       text,
       style: TextStyle(
-          color: Colors.white.withOpacity(0.5),
+          color: textColor.withOpacity(0.5),
           fontSize: 13,
           letterSpacing: 1.1),
     );

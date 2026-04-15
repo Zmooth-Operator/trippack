@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'biometric_service.dart';
+import 'main.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -17,6 +18,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadSettings();
+    themeNotifier.addListener(() => setState(() {}));
   }
 
   Future<void> _loadSettings() async {
@@ -40,56 +42,98 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = themeNotifier.isDark;
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Settings',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text('Settings',
+            style: TextStyle(
+                color: textColor, fontWeight: FontWeight.bold, fontSize: 20)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Security',
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13, letterSpacing: 1.2)),
+            // Appearance
+            Text('Appearance',
+                style: TextStyle(
+                    color: textColor.withOpacity(0.5),
+                    fontSize: 13,
+                    letterSpacing: 1.2)),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF16213E),
+                color: cardColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: SwitchListTile(
+                title: Text('Dark Mode',
+                    style: TextStyle(color: textColor, fontSize: 16)),
+                subtitle: Text(
+                    isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                    style:
+                        TextStyle(color: textColor.withOpacity(0.4), fontSize: 13)),
+                value: isDark,
+                onChanged: (_) => themeNotifier.toggle(),
+                activeColor: AppColors.accent,
+                inactiveTrackColor: textColor.withOpacity(0.1),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Security
+            Text('Security',
+                style: TextStyle(
+                    color: textColor.withOpacity(0.5),
+                    fontSize: 13,
+                    letterSpacing: 1.2)),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: _biometricAvailable
                   ? SwitchListTile(
-                      title: const Text('Face ID / Biometrics',
-                          style: TextStyle(color: Colors.white, fontSize: 16)),
+                      title: Text('Face ID / Biometrics',
+                          style: TextStyle(color: textColor, fontSize: 16)),
                       subtitle: Text('Lock app with biometrics',
-                          style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13)),
+                          style: TextStyle(
+                              color: textColor.withOpacity(0.4), fontSize: 13)),
                       value: _biometricEnabled,
                       onChanged: _toggleBiometric,
-                      activeColor: Colors.white,
-                      inactiveTrackColor: Colors.white12,
+                      activeColor: AppColors.accent,
+                      inactiveTrackColor: textColor.withOpacity(0.1),
                     )
                   : Padding(
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          const Icon(Icons.face, color: Colors.white38),
+                          Icon(Icons.face, color: textColor.withOpacity(0.4)),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Face ID / Biometrics',
-                                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                                Text('Face ID / Biometrics',
+                                    style:
+                                        TextStyle(color: textColor, fontSize: 16)),
                                 Text('Not available on this device',
-                                    style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13)),
+                                    style: TextStyle(
+                                        color: textColor.withOpacity(0.4),
+                                        fontSize: 13)),
                               ],
                             ),
                           ),
@@ -97,29 +141,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
             ),
+
             const SizedBox(height: 24),
+
+            // Privacy
             Text('Privacy',
-                style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13, letterSpacing: 1.2)),
+                style: TextStyle(
+                    color: textColor.withOpacity(0.5),
+                    fontSize: 13,
+                    letterSpacing: 1.2)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF16213E),
+                color: cardColor,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_outline, color: Colors.greenAccent, size: 20),
+                  const Icon(Icons.lock_outline,
+                      color: Colors.greenAccent, size: 20),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Your data never leaves your device',
-                            style: TextStyle(color: Colors.white, fontSize: 15)),
+                        Text('Your data never leaves your device',
+                            style: TextStyle(color: textColor, fontSize: 15)),
                         const SizedBox(height: 4),
                         Text('No servers. No cloud. No tracking.',
-                            style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13)),
+                            style: TextStyle(
+                                color: textColor.withOpacity(0.4), fontSize: 13)),
                       ],
                     ),
                   ),
