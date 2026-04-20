@@ -1,3 +1,4 @@
+import 'dart:math' show pi;
 import 'package:flutter/material.dart';
 import 'new_trip.dart';
 import 'database.dart';
@@ -28,8 +29,11 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
-        title: Text('TripPack',
-            style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 24)),
+        title: Image.asset(
+          'assets/icon/icon.png',
+          height: 32,
+          alignment: Alignment.centerLeft,
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.settings_outlined, color: textColor, size: 24),
@@ -111,20 +115,7 @@ class HomeScreen extends StatelessWidget {
                   }
                   final trips = snapshot.data ?? [];
                   if (trips.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.flight_takeoff, size: 64, color: textColor.withOpacity(0.2)),
-                          const SizedBox(height: 16),
-                          Text('No trips yet',
-                              style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 18)),
-                          const SizedBox(height: 8),
-                          Text('Tap + to create your first trip',
-                              style: TextStyle(color: textColor.withOpacity(0.2), fontSize: 14)),
-                        ],
-                      ),
-                    );
+                    return _EmptyStateHint(textColor: textColor);
                   }
                   return ListView.separated(
                     itemCount: trips.length,
@@ -254,6 +245,70 @@ class _TripCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyStateHint extends StatefulWidget {
+  final Color textColor;
+  const _EmptyStateHint({required this.textColor});
+
+  @override
+  State<_EmptyStateHint> createState() => _EmptyStateHintState();
+}
+
+class _EmptyStateHintState extends State<_EmptyStateHint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _bounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+    _bounce = Tween<double>(begin: 0, end: -10).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = widget.textColor;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.flight_takeoff, size: 64, color: textColor.withOpacity(0.2)),
+          const SizedBox(height: 16),
+          Text('No trips yet',
+              style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 18)),
+          const SizedBox(height: 24),
+          AnimatedBuilder(
+            animation: _bounce,
+            builder: (context, child) => Transform.translate(
+              offset: Offset(0, _bounce.value),
+              child: child,
+            ),
+            child: Transform.rotate(
+              angle: pi / 4,
+              child: Icon(Icons.arrow_upward,
+                  size: 28, color: textColor.withOpacity(0.35)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text('Create your first trip',
+              style: TextStyle(color: textColor.withOpacity(0.25), fontSize: 14)),
+        ],
       ),
     );
   }

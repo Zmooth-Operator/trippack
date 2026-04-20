@@ -40,7 +40,7 @@ class _NewTripScreenState extends State<NewTripScreen> {
     'Vaccination Proof', 'Other',
   ];
 
-  final Map<String, String?> _docSelections = {};
+  final Map<String, PlatformFile> _docSelections = {};
 
   final List<Map<String, dynamic>> _quickCities = [
     {'city': 'Paris', 'country': 'France', 'lat': 48.8566, 'lng': 2.3522},
@@ -159,9 +159,13 @@ class _NewTripScreenState extends State<NewTripScreen> {
   }
 
   Future<void> _pickFileForDoc(String type) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      withData: false,
+      withReadStream: false,
+    );
     if (result != null && result.files.isNotEmpty) {
-      setState(() => _docSelections[type] = result.files.first.name);
+      setState(() => _docSelections[type] = result.files.first);
     }
   }
 
@@ -217,8 +221,9 @@ class _NewTripScreenState extends State<NewTripScreen> {
       await database.insertDocument(DocumentsCompanion(
         tripId: Value(tripId),
         type: Value(entry.key),
-        fileName: Value(entry.value),
-        isUploaded: Value(entry.value != null),
+        fileName: Value(entry.value.name),
+        filePath: Value(entry.value.path),
+        isUploaded: const Value(true),
       ));
     }
     if (mounted) Navigator.popUntil(context, (r) => r.isFirst);
@@ -270,7 +275,9 @@ class _NewTripScreenState extends State<NewTripScreen> {
     final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
     final textColor = isDark ? Colors.white : Colors.black;
 
-    return Column(
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Plan your trip',
@@ -402,9 +409,10 @@ class _NewTripScreenState extends State<NewTripScreen> {
           ),
         ),
 
-        const Spacer(),
+        const SizedBox(height: 24),
         _nextButton('Next'),
       ],
+      ),
     );
   }
 
@@ -413,7 +421,8 @@ class _NewTripScreenState extends State<NewTripScreen> {
     final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
     final textColor = isDark ? Colors.white : Colors.black;
 
-    return Column(
+    return SingleChildScrollView(
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Documents',
@@ -422,14 +431,15 @@ class _NewTripScreenState extends State<NewTripScreen> {
         Text('Upload now or add later',
             style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 16)),
         const SizedBox(height: 24),
-        Expanded(
-          child: ListView.separated(
+        ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: _docTypes.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final type = _docTypes[i];
-              final fileName = _docSelections[type];
-              final isUploaded = fileName != null;
+              final pickedFile = _docSelections[type];
+              final isUploaded = pickedFile != null;
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -449,7 +459,7 @@ class _NewTripScreenState extends State<NewTripScreen> {
                         children: [
                           Text(type, style: TextStyle(color: textColor, fontSize: 15)),
                           if (isUploaded)
-                            Text(fileName,
+                            Text(pickedFile.name,
                                 style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 12),
                                 overflow: TextOverflow.ellipsis),
                         ],
@@ -481,9 +491,10 @@ class _NewTripScreenState extends State<NewTripScreen> {
               );
             },
           ),
-        ),
+        const SizedBox(height: 24),
         _nextButton('Next'),
       ],
+      ),
     );
   }
 
@@ -494,7 +505,8 @@ class _NewTripScreenState extends State<NewTripScreen> {
     final radii = [('20 km', '~50 MB', 20), ('50 km', '~120 MB', 50), ('100 km', '~280 MB', 100)];
     final hasCoords = _selectedLat != null && _selectedLng != null;
 
-    return Column(
+    return SingleChildScrollView(
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Download Map',
@@ -590,9 +602,10 @@ class _NewTripScreenState extends State<NewTripScreen> {
             ],
           ),
         ],
-        const Spacer(),
+        const SizedBox(height: 24),
         _nextButton('Create Trip', onPressed: _saveTrip),
       ],
+      ),
     );
   }
 
